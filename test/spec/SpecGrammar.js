@@ -63,7 +63,7 @@ describe('Grammar', function () {
         uriHas('host', 'aliax.net');
         uriHas('port', undefined);
 
-        uriReturns('getParam', 'transport', 'ws');
+        uriReturns('getParam', 'transport', 'udp');
         uriReturns('getParam', 'foo', undefined);
         uriReturns('getHeader', 'X-Header', undefined);
       });

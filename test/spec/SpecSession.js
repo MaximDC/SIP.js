@@ -918,7 +918,7 @@ describe('InviteServerContext', function() {
 
   beforeEach(function(){
 
-    ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws://server.example.com'});
+    ua = new SIP.UA({uri: 'alice@example.com', servers: 'ws://server.example.com'});
     ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect','server']);
     ua.transport.server.scheme = 'wss';
 
@@ -1778,7 +1778,7 @@ describe('InviteClientContext', function() {
 
   beforeEach(function(){
     target = 'bob@example.com';
-    ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
+    ua = new SIP.UA({uri: 'alice@example.com', servers: 'ws:server.example.com'});
 
     ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect', 'server']);
     ua.transport.server.scheme = 'wss';

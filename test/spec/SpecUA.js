@@ -5,10 +5,10 @@ describe('UA', function() {
 
   beforeEach(function() {
     uri = 'alice@example.com';
-    wsServers = 'ws://server.example.com';
+    servers = 'ws://server.example.com';
     registrarServer = 'registrar.example.com';
     configuration = {uri : uri,
-                     wsServers : wsServers };
+                     servers : servers };
 
     spyOn(SIP, 'RegisterContext').and.returnValue({
       on: jasmine.createSpy('on'),
@@ -38,7 +38,7 @@ describe('UA', function() {
 
     expect(noParams).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual(jasmine.any(String));
-    expect(myUA.configuration.wsServers).toEqual([{
+    expect(myUA.configuration.servers).toEqual([{
       scheme: 'WSS',
       sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
       status: 0,
@@ -55,7 +55,7 @@ describe('UA', function() {
 
     expect(oneParam).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
-    expect(myUA.configuration.wsServers).toEqual([{
+    expect(myUA.configuration.servers).toEqual([{
       scheme: 'WSS',
       sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
       status: 0,
@@ -72,7 +72,7 @@ describe('UA', function() {
 
     expect(oneParam).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
-    expect(myUA.configuration.wsServers).toEqual([{
+    expect(myUA.configuration.servers).toEqual([{
       scheme: 'WSS',
       sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
       status: 0,
@@ -141,7 +141,7 @@ describe('UA', function() {
 
     it('creates a SIP transport if the status is C.STATUS_INIT', function() {
       UA.status = SIP.UA.C.STATUS_INIT;
-      UA.getNextWsServer = jasmine.createSpy('getNextWsServer').and.callFake(function() {
+      UA.getNextserver = jasmine.createSpy('getNextserver').and.callFake(function() {
         return 'ws-server';
       });
       UA.start();
@@ -1040,7 +1040,7 @@ describe('UA', function() {
     });
   });
 
-  describe('.getNextWsServer', function() {
+  describe('.getNextserver', function() {
     var can1, can2, can3, can4;
 
     beforeEach(function() {
@@ -1049,12 +1049,12 @@ describe('UA', function() {
       can3 = {status: 0, weight: 1};
       can4 = {status: 0, weight: 2};
 
-      //Note: can't just set wsServers at this point
-      UA.configuration = {wsServers: [can1,can2,can3,can4]};
+      //Note: can't just set servers at this point
+      UA.configuration = {servers: [can1,can2,can3,can4]};
     });
 
     it('selects the candidate with the highest weight', function() {
-      expect(UA.getNextWsServer()).toBe(can4);
+      expect(UA.getNextserver()).toBe(can4);
     });
 
     it('selects one of the candidates with the highest weight', function() {
@@ -1062,17 +1062,17 @@ describe('UA', function() {
 
       spyOn(Math, 'random').and.returnValue(0.9);
 
-      expect(UA.getNextWsServer()).toBe(can3);
+      expect(UA.getNextserver()).toBe(can3);
 
       Math.random.and.returnValue(0.4);
 
-      expect(UA.getNextWsServer()).toBe(can2);
+      expect(UA.getNextserver()).toBe(can2);
     });
 
     it('does not select a candidate that has a transport error', function() {
       can4.status = 2;
 
-      expect(UA.getNextWsServer()).not.toBe(can4);
+      expect(UA.getNextserver()).not.toBe(can4);
     });
   });
 
@@ -1099,19 +1099,19 @@ describe('UA', function() {
     });
 
     it('logs if the next retry time exceeds the max_interval', function(){
-      UA.configuration = {wsServers: [{status:1, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: -1};
+      UA.configuration = {servers: [{status:1, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: -1};
 
       UA.recoverTransport(UA);
 
       expect(UA.logger.log).toHaveBeenCalledWith('time for next connection attempt exceeds connectionRecoveryMaxInterval, resetting counter');
     });
 
-    it('calls getNextWsServer', function() {
-      spyOn(UA, 'getNextWsServer').and.callThrough();
+    it('calls getNextserver', function() {
+      spyOn(UA, 'getNextserver').and.callThrough();
 
       UA.recoverTransport(UA);
 
-      expect(UA.getNextWsServer).toHaveBeenCalled();
+      expect(UA.getNextserver).toHaveBeenCalled();
     });
 
     it('sets the transportRecoveryTimer', function() {
@@ -1127,7 +1127,7 @@ describe('UA', function() {
         spyOn(SIP, 'Transport');
         SIP.Transport.C = {STATUS_READY: 0, STATUS_DISCONNECTED: 1, STATUS_ERROR: 2};
 
-        UA.configuration = {wsServers: [{status:0, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: 7};
+        UA.configuration = {servers: [{status:0, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: 7};
         UA.transportRecoverAttempts = 0;
 
         UA.recoverTransport(UA);
@@ -1158,7 +1158,7 @@ describe('UA', function() {
       expect(UA.configuration.viaHost).toBeDefined();
 
       expect(UA.configuration.uri).toBeDefined();
-      expect(UA.configuration.wsServers).toEqual([{scheme: 'WSS', sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>', status: 0, weight: 0, ws_uri: 'wss://edge.sip.onsip.com'}]);
+      expect(UA.configuration.servers).toEqual([{scheme: 'WSS', sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>', status: 0, weight: 0, ws_uri: 'wss://edge.sip.onsip.com'}]);
 
       expect(UA.configuration.password).toBeNull();
 
@@ -1166,8 +1166,8 @@ describe('UA', function() {
       expect(UA.configuration.register).toBe(true);
       //registrarServer is set to null here, then switched later in the function if it wasn't passed in
 
-      expect(UA.configuration.wsServerMaxReconnection).toBe(3);
-      expect(UA.configuration.wsServerReconnectionTimeout).toBe(4);
+      expect(UA.configuration.serverMaxReconnection).toBe(3);
+      expect(UA.configuration.serverReconnectionTimeout).toBe(4);
 
       expect(UA.configuration.connectionRecoveryMinInterval).toBe(2);
       expect(UA.configuration.connectionRecoveryMaxInterval).toBe(30);
@@ -1331,35 +1331,35 @@ describe('UA', function() {
       });
     });
 
-    describe('.wsServers', function() {
+    describe('.servers', function() {
       it('fails for types that are not string or array (of strings or objects', function() {
-        expect(configCheck.optional.wsServers(7)).toBeUndefined();
+        expect(configCheck.optional.servers(7)).toBeUndefined();
       });
 
       it('fails for an empty array', function() {
         //NOTE: this is the only case that false is returned (instead of nothing)
-        expect(configCheck.optional.wsServers([])).toBe(false);
+        expect(configCheck.optional.servers([])).toBe(false);
       });
 
       it('fails if ws_uri attribute is missing', function() {
-        expect(configCheck.optional.wsServers([{sandwich: 'ham'}])).toBeUndefined();
+        expect(configCheck.optional.servers([{sandwich: 'ham'}])).toBeUndefined();
       });
 
       it('fails if weight attribute is not a number', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'ham', weight: 'scissors'}])).toBeUndefined()
+        expect(configCheck.optional.servers([{ws_uri: 'ham', weight: 'scissors'}])).toBeUndefined()
       });
 
       it('fails if the ws_uri is invalid', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'ham'}])).toBeUndefined();
+        expect(configCheck.optional.servers([{ws_uri: 'ham'}])).toBeUndefined();
       });
 
       it('fails if the url scheme is not wss or ws', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'ithoughtthiswasright://alice@example.com'}])).toBeUndefined();
+        expect(configCheck.optional.servers([{ws_uri: 'ithoughtthiswasright://alice@example.com'}])).toBeUndefined();
       });
 
       it('returns correctly if none of the above is wrong', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'wss://edge.sip.onsip.com'}])).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
-        expect(configCheck.optional.wsServers("wss://edge.sip.onsip.com")).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
+        expect(configCheck.optional.servers([{ws_uri: 'wss://edge.sip.onsip.com'}])).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
+        expect(configCheck.optional.servers("wss://edge.sip.onsip.com")).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
       });
     });
 
@@ -1723,39 +1723,39 @@ describe('UA', function() {
       });
     });
 
-    describe('.wsServerMaxReconnection', function() {
+    describe('.serverMaxReconnection', function() {
       it('fails for anything but numbers', function() {
-        expect(configCheck.optional.wsServerMaxReconnection(true)).toBeUndefined();
-        expect(configCheck.optional.wsServerMaxReconnection('string')).toBeUndefined();
-        expect(configCheck.optional.wsServerMaxReconnection(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.wsServerMaxReconnection({even: 'objects'})).toBeUndefined();
+        expect(configCheck.optional.serverMaxReconnection(true)).toBeUndefined();
+        expect(configCheck.optional.serverMaxReconnection('string')).toBeUndefined();
+        expect(configCheck.optional.serverMaxReconnection(['arrays'])).toBeUndefined();
+        expect(configCheck.optional.serverMaxReconnection({even: 'objects'})).toBeUndefined();
       });
 
       it('fails for negative numbers and 0', function() {
-        expect(configCheck.optional.wsServerMaxReconnection(0)).toBeUndefined();
-        expect(configCheck.optional.wsServerMaxReconnection(-7)).toBeUndefined();
+        expect(configCheck.optional.serverMaxReconnection(0)).toBeUndefined();
+        expect(configCheck.optional.serverMaxReconnection(-7)).toBeUndefined();
       });
 
       it('passes for positive numbers', function() {
-        expect(configCheck.optional.wsServerMaxReconnection(7)).toBe(7);
+        expect(configCheck.optional.serverMaxReconnection(7)).toBe(7);
       });
     });
 
-    describe('.wsServerReconnectionTimeout', function() {
+    describe('.serverReconnectionTimeout', function() {
       it('fails for anything but numbers', function() {
-        expect(configCheck.optional.wsServerReconnectionTimeout(true)).toBeUndefined();
-        expect(configCheck.optional.wsServerReconnectionTimeout('string')).toBeUndefined();
-        expect(configCheck.optional.wsServerReconnectionTimeout(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.wsServerReconnectionTimeout({even: 'objects'})).toBeUndefined();
+        expect(configCheck.optional.serverReconnectionTimeout(true)).toBeUndefined();
+        expect(configCheck.optional.serverReconnectionTimeout('string')).toBeUndefined();
+        expect(configCheck.optional.serverReconnectionTimeout(['arrays'])).toBeUndefined();
+        expect(configCheck.optional.serverReconnectionTimeout({even: 'objects'})).toBeUndefined();
       });
 
       it('fails for negative numbers and 0', function() {
-        expect(configCheck.optional.wsServerReconnectionTimeout(0)).toBeUndefined();
-        expect(configCheck.optional.wsServerReconnectionTimeout(-7)).toBeUndefined();
+        expect(configCheck.optional.serverReconnectionTimeout(0)).toBeUndefined();
+        expect(configCheck.optional.serverReconnectionTimeout(-7)).toBeUndefined();
       });
 
       it('passes for positive numbers', function() {
-        expect(configCheck.optional.wsServerReconnectionTimeout(7)).toBe(7);
+        expect(configCheck.optional.serverReconnectionTimeout(7)).toBe(7);
       });
     });
 

@@ -20,7 +20,7 @@
   },
   "keywords": [
     "sip",
-    "websocket",
+    "udpsocket",
     "webrtc",
     "library",
     "javascript"
@@ -48,9 +48,6 @@
     "build": "grunt build",
     "prepublish": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
     "test": "grunt travis --verbose"
-  },
-  "dependencies": {
-    "ws": "^1.0.1"
   },
   "optionalDependencies": {
     "promiscuous": "^0.6.0"

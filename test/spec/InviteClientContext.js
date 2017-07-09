@@ -64,7 +64,7 @@ describe('An INVITE sent from a UAC', function () {
   });
 
   // FIXME - This test probably has an invalid scope.
-  xit('sends an INVITE on the WebSocket', function (done) {
+  xit('sends an INVITE on the UDPSocket', function (done) {
     // HACK: IF THIS BREAKS, CHANGE THE NUMBER: this is sketchy
     setTimeout(function() {
       expect(this.ua.transport.ws.send).toHaveBeenCalled();

@@ -1,7 +1,7 @@
 (function () {
 
-  /** WebSocket **/
-  function FakeWebSocket(server, protocol) {
+  /** UDPSocket **/
+  function FakeUDPSocket(server, protocol) {
     this.readyState = 0; // CONNECTING
     var that = this;
     spyOn(this, 'send');
@@ -12,7 +12,7 @@
       }
     }, 0);
   }
-  FakeWebSocket.prototype = {
+  FakeUDPSocket.prototype = {
     send: function() {},
     close: function () {
       var that = this;
@@ -30,11 +30,11 @@
       if (this.onerror) this.onerror(e);
     }
   };
-  FakeWebSocket.CONNECTING = 0;
-  FakeWebSocket.OPEN = 1;
-  FakeWebSocket.CLOSED = 3;
-  FakeWebSocket.orig = window.WebSocket;
-  window.WebSocket = FakeWebSocket;
+  FakeUDPSocket.CONNECTING = 0;
+  FakeUDPSocket.OPEN = 1;
+  FakeUDPSocket.CLOSED = 3;
+  FakeUDPSocket.orig = window.UDPSocket;
+  window.UDPSocket = FakeUDPSocket;
 
 
   /** WebRTC **/

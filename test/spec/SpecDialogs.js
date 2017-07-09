@@ -6,7 +6,7 @@ describe('Dialogs', function() {
   beforeEach(function() {
     var ua = new SIP.UA({
       uri: 'alice@example.com',
-      wsServers: 'ws:server.example.com'
+      servers: 'ws:server.example.com'
     });
     ua.transport = jasmine.createSpyObj('transport', ['disconnect', 'send']);
     message = SIP.Parser.parseMessage([

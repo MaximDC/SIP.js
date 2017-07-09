@@ -366,7 +366,7 @@ UA.prototype.start = function() {
 
   this.logger.log('user requested startup...');
   if (this.status === C.STATUS_INIT) {
-    server = this.getNextWsServer();
+    server = this.getNextserver();
     this.status = C.STATUS_STARTING;
     new SIP.Transport(this, server);
   } else if(this.status === C.STATUS_USER_CLOSED) {
@@ -491,7 +491,7 @@ UA.prototype.onTransportError = function(transport) {
     return;
   }
 
-  server = this.getNextWsServer();
+  server = this.getNextserver();
 
   if(server) {
     new SIP.Transport(this, server);
@@ -788,25 +788,25 @@ UA.prototype.findEarlySubscription = function(request) {
 /**
  * Retrieve the next server to which connect.
  * @private
- * @returns {Object} ws_server
+ * @returns {Object} server
  */
-UA.prototype.getNextWsServer = function() {
+UA.prototype.getNextserver = function() {
   // Order servers by weight
-  var idx, length, ws_server,
+  var idx, length, server,
     candidates = [];
 
-  length = this.configuration.wsServers.length;
+  length = this.configuration.servers.length;
   for (idx = 0; idx < length; idx++) {
-    ws_server = this.configuration.wsServers[idx];
+    server = this.configuration.servers[idx];
 
-    if (ws_server.status === SIP.Transport.C.STATUS_ERROR) {
+    if (server.status === SIP.Transport.C.STATUS_ERROR) {
       continue;
     } else if (candidates.length === 0) {
-      candidates.push(ws_server);
-    } else if (ws_server.weight > candidates[0].weight) {
-      candidates = [ws_server];
-    } else if (ws_server.weight === candidates[0].weight) {
-      candidates.push(ws_server);
+      candidates.push(server);
+    } else if (server.weight > candidates[0].weight) {
+      candidates = [server];
+    } else if (server.weight === candidates[0].weight) {
+      candidates.push(server);
     }
   }
 
@@ -836,12 +836,12 @@ UA.prototype.recoverTransport = function(ua) {
   ua = ua || this;
   count = ua.transportRecoverAttempts;
 
-  length = ua.configuration.wsServers.length;
+  length = ua.configuration.servers.length;
   for (idx = 0; idx < length; idx++) {
-    ua.configuration.wsServers[idx].status = 0;
+    ua.configuration.servers[idx].status = 0;
   }
 
-  server = ua.getNextWsServer();
+  server = ua.getNextserver();
 
   k = Math.floor((Math.random() * Math.pow(2,count)) +1);
   nextRetry = k * ua.configuration.connectionRecoveryMinInterval;
@@ -888,12 +888,12 @@ UA.prototype.loadConfig = function(configuration) {
       viaHost: SIP.Utils.createRandomToken(12) + '.invalid',
 
       uri: new SIP.URI('sip', 'anonymous.' + SIP.Utils.createRandomToken(6), 'anonymous.invalid', null, null),
-      wsServers: [{
+      servers: [{
         scheme: 'WSS',
         sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
         status: 0,
         weight: 0,
-        ws_uri: 'wss://edge.sip.onsip.com'
+        uri: 'wss://edge.sip.onsip.com'
       }],
 
       //Custom Configuration Settings
@@ -911,8 +911,8 @@ UA.prototype.loadConfig = function(configuration) {
       registrarServer: null,
 
       // Transport related parameters
-      wsServerMaxReconnection: 3,
-      wsServerReconnectionTimeout: 4,
+      serverMaxReconnection: 3,
+      serverReconnectionTimeout: 4,
 
       connectionRecoveryMinInterval: 2,
       connectionRecoveryMaxInterval: 30,
@@ -943,7 +943,7 @@ UA.prototype.loadConfig = function(configuration) {
       hackCleanJitsiSdpImageattr: false,
       hackStripTcp: false,
 
-      contactTransport: 'ws',
+      contactTransport: 'udp',
       forceRport: false,
 
       //autostarting
@@ -1184,59 +1184,59 @@ UA.prototype.getConfigurationCheck = function () {
       },
 
       //Note: this function used to call 'this.logger.error' but calling 'this' with anything here is invalid
-      wsServers: function(wsServers) {
+      servers: function(servers) {
         var idx, length, url;
 
-        /* Allow defining wsServers parameter as:
+        /* Allow defining servers parameter as:
          *  String: "host"
          *  Array of Strings: ["host1", "host2"]
-         *  Array of Objects: [{ws_uri:"host1", weight:1}, {ws_uri:"host2", weight:0}]
-         *  Array of Objects and Strings: [{ws_uri:"host1"}, "host2"]
+         *  Array of Objects: [{uri:"host1", weight:1}, {uri:"host2", weight:0}]
+         *  Array of Objects and Strings: [{uri:"host1"}, "host2"]
          */
-        if (typeof wsServers === 'string') {
-          wsServers = [{ws_uri: wsServers}];
-        } else if (wsServers instanceof Array) {
-          length = wsServers.length;
+        if (typeof servers === 'string') {
+          servers = [{uri: servers}];
+        } else if (servers instanceof Array) {
+          length = servers.length;
           for (idx = 0; idx < length; idx++) {
-            if (typeof wsServers[idx] === 'string'){
-              wsServers[idx] = {ws_uri: wsServers[idx]};
+            if (typeof servers[idx] === 'string'){
+              servers[idx] = {uri: servers[idx]};
             }
           }
         } else {
           return;
         }
 
-        if (wsServers.length === 0) {
+        if (servers.length === 0) {
           return false;
         }
 
-        length = wsServers.length;
+        length = servers.length;
         for (idx = 0; idx < length; idx++) {
-          if (!wsServers[idx].ws_uri) {
+          if (!servers[idx].uri) {
             return;
           }
-          if (wsServers[idx].weight && !Number(wsServers[idx].weight)) {
+          if (servers[idx].weight && !Number(servers[idx].weight)) {
             return;
           }
 
-          url = SIP.Grammar.parse(wsServers[idx].ws_uri, 'absoluteURI');
+          url = SIP.Grammar.parse(servers[idx].uri, 'absoluteURI');
 
           if(url === -1) {
             return;
-          } else if(['wss', 'ws', 'udp'].indexOf(url.scheme) < 0) {
+          } else if(['udp'].indexOf(url.scheme) < 0) {
             return;
           } else {
-            wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=' + url.scheme.replace(/^wss$/i, 'ws') + ';lr>';
+            servers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=' + url.scheme.replace(/^wss$/i, 'ws') + ';lr>';
 
-            if (!wsServers[idx].weight) {
-              wsServers[idx].weight = 0;
+            if (!servers[idx].weight) {
+              servers[idx].weight = 0;
             }
 
-            wsServers[idx].status = 0;
-            wsServers[idx].scheme = url.scheme.toUpperCase();
+            servers[idx].status = 0;
+            servers[idx].scheme = url.scheme.toUpperCase();
           }
         }
-        return wsServers;
+        return servers;
       },
 
       authorizationUser: function(authorizationUser) {
@@ -1538,20 +1538,20 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      wsServerMaxReconnection: function(wsServerMaxReconnection) {
+      serverMaxReconnection: function(serverMaxReconnection) {
         var value;
-        if (SIP.Utils.isDecimal(wsServerMaxReconnection)) {
-          value = Number(wsServerMaxReconnection);
+        if (SIP.Utils.isDecimal(serverMaxReconnection)) {
+          value = Number(serverMaxReconnection);
           if (value > 0) {
             return value;
           }
         }
       },
 
-      wsServerReconnectionTimeout: function(wsServerReconnectionTimeout) {
+      serverReconnectionTimeout: function(serverReconnectionTimeout) {
         var value;
-        if (SIP.Utils.isDecimal(wsServerReconnectionTimeout)) {
-          value = Number(wsServerReconnectionTimeout);
+        if (SIP.Utils.isDecimal(serverReconnectionTimeout)) {
+          value = Number(serverReconnectionTimeout);
           if (value > 0) {
             return value;
           }
