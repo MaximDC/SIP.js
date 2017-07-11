@@ -32,7 +32,7 @@ Transport = function(ua, server) {
 
   this.logger = ua.getLogger('sip.transport');
   this.ua = ua;
-  this.ws = null;
+  this.socket = dgram.createSocket('udp4');
   this.server = server;
   this.reconnection_attempts = 0;
   this.closed = false;
@@ -59,11 +59,11 @@ Transport.prototype = {
   send: function(msg) {
     var message = msg.toString();
 
-    if(this.ws && this.ws.readyState === UDPSocket.OPEN) {
+    if(this.socket && this.socket.readyState === UDPSocket.OPEN) {
       if (this.ua.configuration.traceSip === true) {
         this.logger.log('sending UDPSocket message:\n\n' + message + '\n');
       }
-      this.ws.send(message);
+      this.socket.send(message);
       return true;
     } else {
       this.logger.warn('unable to send message, UDPSocket is not open');
@@ -115,16 +115,16 @@ Transport.prototype = {
   * Disconnect socket.
   */
   disconnect: function() {
-    if(this.ws) {
+    if(this.socket) {
       // Clear reconnectTimer
       SIP.Timers.clearTimeout(this.reconnectTimer);
 
       this.stopSendingKeepAlives();
 
       this.closed = true;
-      this.logger.log('closing UDPSocket ' + this.server.ws_uri);
-      this.ws.close();
-      this.ws = null;
+      this.logger.log('closing UDPSocket ' + this.server.socket_uri);
+      this.socket.close();
+      this.socket = null;
     }
 
     if (this.reconnectTimer !== null) {
@@ -144,33 +144,33 @@ Transport.prototype = {
   connect: function() {
     var transport = this;
 
-    if(this.ws && (this.ws.readyState === UDPSocket.OPEN || this.ws.readyState === UDPSocket.CONNECTING)) {
-      this.logger.log('UDPSocket ' + this.server.ws_uri + ' is already connected');
+    if(this.socket && (this.socket.readyState === UDPSocket.OPEN || this.socket.readyState === UDPSocket.CONNECTING)) {
+      this.logger.log('UDPSocket ' + this.server.socket_uri + ' is already connected');
       return false;
     }
 
-    if(this.ws) {
-      this.ws.close();
-      this.ws = null;
+    if(this.socket) {
+      this.socket.close();
+      this.socket = null;
     }
 
-    this.logger.log('connecting to UDPSocket ' + this.server.ws_uri);
+    this.logger.log('connecting to UDPSocket ' + this.server.socket_uri);
     this.ua.onTransportConnecting(this,
       (this.reconnection_attempts === 0)?1:this.reconnection_attempts);
 
     try {
-      this.ws = new UDPSocket(this.server.ws_uri, 'sip');
+      this.socket = new UDPSocket(this.server.socket_uri, 'sip');
     } catch(e) {
-      this.logger.warn('error connecting to UDPSocket ' + this.server.ws_uri + ': ' + e);
+      this.logger.warn('error connecting to UDPSocket ' + this.server.socket_uri + ': ' + e);
     }
 
-    this.ws.binaryType = 'arraybuffer';
+    this.socket.binaryType = 'arraybuffer';
 
-    this.ws.onopen = function() {
+    this.socket.onopen = function() {
       transport.onOpen();
     };
 
-    this.ws.onclose = function(e) {
+    this.socket.onclose = function(e) {
       transport.onClose(e);
       // Always cleanup. Eases GC, prevents potential memory leaks.
       this.onopen = null;
@@ -179,11 +179,11 @@ Transport.prototype = {
       this.onerror = null;
     };
 
-    this.ws.onmessage = function(e) {
+    this.socket.onmessage = function(e) {
       transport.onMessage(e);
     };
 
-    this.ws.onerror = function(e) {
+    this.socket.onerror = function(e) {
       transport.onError(e);
     };
   },
@@ -197,7 +197,7 @@ Transport.prototype = {
   onOpen: function() {
     this.connected = true;
 
-    this.logger.log('UDPSocket ' + this.server.ws_uri + ' connected');
+    this.logger.log('UDPSocket ' + this.server.socket_uri + ' connected');
     // Clear reconnectTimer since we are not disconnected
     if (this.reconnectTimer !== null) {
       SIP.Timers.clearTimeout(this.reconnectTimer);
@@ -357,13 +357,13 @@ Transport.prototype = {
     this.reconnection_attempts += 1;
 
     if(this.reconnection_attempts > this.ua.configuration.serverMaxReconnection) {
-      this.logger.warn('maximum reconnection attempts for UDPSocket ' + this.server.ws_uri);
+      this.logger.warn('maximum reconnection attempts for UDPSocket ' + this.server.socket_uri);
       this.ua.onTransportError(this);
     } else if (this.reconnection_attempts === 1) {
-      this.logger.log('Connection to UDPSocket ' + this.server.ws_uri + ' severed, attempting first reconnect');
+      this.logger.log('Connection to UDPSocket ' + this.server.socket_uri + ' severed, attempting first reconnect');
       transport.connect();
     } else {
-      this.logger.log('trying to reconnect to UDPSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
+      this.logger.log('trying to reconnect to UDPSocket ' + this.server.socket_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
 
       this.reconnectTimer = SIP.Timers.setTimeout(function() {
         transport.connect();

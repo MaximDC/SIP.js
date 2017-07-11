@@ -67,8 +67,8 @@ describe('An INVITE sent from a UAC', function () {
   xit('sends an INVITE on the UDPSocket', function (done) {
     // HACK: IF THIS BREAKS, CHANGE THE NUMBER: this is sketchy
     setTimeout(function() {
-      expect(this.ua.transport.ws.send).toHaveBeenCalled();
-      expect(this.ua.transport.ws.send.calls.mostRecent().args[0]).
+      expect(this.ua.transport.socket.send).toHaveBeenCalled();
+      expect(this.ua.transport.socket.send.calls.mostRecent().args[0]).
         toMatch('INVITE sip:alice@example.com SIP/2.0\r\n');
       expect(this.session.status).toBe(SIP.Session.C.STATUS_INVITE_SENT);
       done();
@@ -162,22 +162,22 @@ describe('An INVITE sent from a UAC', function () {
 
     describe('the Via header', function () {
       beforeEach(function (done) {
-        if (this.ua.transport.ws.send.calls.mostRecent()) {
+        if (this.ua.transport.socket.send.calls.mostRecent()) {
           done();
         } else {
-          this.ua.transport.ws.send.and.callFake(function () {
+          this.ua.transport.socket.send.and.callFake(function () {
             setTimeout(done, 0);
           });
         }
       });
 
       it('uses SIP/2.0', function () {
-        var via = SIP.Parser.parseMessage(this.ua.transport.ws.send.calls.mostRecent().args[0], this.ua).getHeader('via');
+        var via = SIP.Parser.parseMessage(this.ua.transport.socket.send.calls.mostRecent().args[0], this.ua).getHeader('via');
         expect(via).toContain('SIP/2.0');
       });
 
       it('has a branch parameter', function () {
-        var via = SIP.Parser.parseMessage(this.ua.transport.ws.send.calls.mostRecent().args[0], this.ua).getHeader('via');
+        var via = SIP.Parser.parseMessage(this.ua.transport.socket.send.calls.mostRecent().args[0], this.ua).getHeader('via');
         expect(via).toContain(';branch');
       });
     });
@@ -370,7 +370,7 @@ describe('An INVITE sent from a UAC', function () {
 
     // FIXME - also asynchronous
     xit('sends an ACK', function () {
-      expect(this.ua.transport.ws.send.calls.mostRecent().args[0]).toContain('ACK');
+      expect(this.ua.transport.socket.send.calls.mostRecent().args[0]).toContain('ACK');
     });
   });
 
@@ -401,7 +401,7 @@ describe('An INVITE sent from a UAC', function () {
 
     // FIXME - Asynchronous?
     xit('sends an ACK', function () {
-      expect(this.ua.transport.ws.send.calls.mostRecent().args[0]).toContain('ACK');
+      expect(this.ua.transport.socket.send.calls.mostRecent().args[0]).toContain('ACK');
     });
   });
 

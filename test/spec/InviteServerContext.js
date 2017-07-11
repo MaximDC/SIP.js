@@ -33,8 +33,8 @@ describe('A UAS receiving an INVITE', function () {
       jasmine.clock().install();
 
       ua = new SIP.UA(ua_config).once('connected', function () {
-        ws = ua.transport.ws;
-        ws.receiveMessage(Messages.Invite.nosdp);
+        socket = ua.transport.socket;
+        socket.receiveMessage(Messages.Invite.nosdp);
       }).once('invite', callback);
 
       jasmine.clock().tick(100);
@@ -69,7 +69,7 @@ describe('A UAS receiving an INVITE', function () {
       };
 
       ua = new SIP.UA(ua_config).once('connected', function () {
-        ua.transport.ws.receiveMessage(Messages.Invite.normal);
+        ua.transport.socket.receiveMessage(Messages.Invite.normal);
       }).once('invite', function (s) {
         session = s;
         setTimeout(done, 0);
@@ -78,26 +78,26 @@ describe('A UAS receiving an INVITE', function () {
 
     describe('sending a progress response', function () {
       it('sends 100 unreliably with no body', function () {
-        ua.transport.ws.send.and.callFake(function () {
-          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
+        ua.transport.socket.send.and.callFake(function () {
+          var packet = ua.transport.socket.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 100 Trying');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
 
-        ua.transport.ws.send.calls.reset();
+        ua.transport.socket.send.calls.reset();
         session.progress({ statusCode: 100 });
       });
 
       it('sends 1xx unreliably with no body', function () {
-        ua.transport.ws.send.and.callFake(function () {
-          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
+        ua.transport.socket.send.and.callFake(function () {
+          var packet = ua.transport.socket.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 180 Ringing');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
 
-        ua.transport.ws.send.calls.reset();
+        ua.transport.socket.send.calls.reset();
         session.progress({ statusCode: 180 });
       });
     });
@@ -120,7 +120,7 @@ describe('A UAS receiving an INVITE', function () {
       };
 
       ua = new SIP.UA(ua_config).once('connected', function () {
-        ua.transport.ws.receiveMessage(Messages.Invite.rel100sup);
+        ua.transport.socket.receiveMessage(Messages.Invite.rel100sup);
       }).once('invite', function (s) {
         session = s;
         setTimeout(done, 0);
@@ -129,38 +129,38 @@ describe('A UAS receiving an INVITE', function () {
 
     describe('sending a progress response', function () {
       it('sends 100 unreliably with no body', function () {
-        ua.transport.ws.send.and.callFake(function () {
-          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
+        ua.transport.socket.send.and.callFake(function () {
+          var packet = ua.transport.socket.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 100 Trying');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
 
-        ua.transport.ws.send.calls.reset();
+        ua.transport.socket.send.calls.reset();
         session.progress({ statusCode: 100 });
       });
 
       it('sends 1xx unreliably with no body', function () {
-        ua.transport.ws.send.and.callFake(function () {
-          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
+        ua.transport.socket.send.and.callFake(function () {
+          var packet = ua.transport.socket.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 183 Session Progress');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
 
-        ua.transport.ws.send.calls.reset();
+        ua.transport.socket.send.calls.reset();
         session.progress({ statusCode: 183 });
       });
 
       it('sends 1xx reliably with a body, when rel100 specified', function () {
-        ua.transport.ws.send.and.callFake(function () {
-          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
+        ua.transport.socket.send.and.callFake(function () {
+          var packet = ua.transport.socket.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 183 Session Progress');
           expect(packet).toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch(/Content-Length: [^0].*\r\n/);
         });
 
-        ua.transport.ws.send.calls.reset();
+        ua.transport.socket.send.calls.reset();
         session.progress({ statusCode: 183, rel100: true });
       });
     });
@@ -183,7 +183,7 @@ describe('A UAS receiving an INVITE', function () {
       };
 
       ua = new SIP.UA(ua_config).once('connected', function () {
-        ua.transport.ws.receiveMessage(Messages.Invite.rel100req);
+        ua.transport.socket.receiveMessage(Messages.Invite.rel100req);
       }).once('invite', function (s) {
         session = s;
         setTimeout(done, 0);
@@ -192,26 +192,26 @@ describe('A UAS receiving an INVITE', function () {
 
     describe('sending a progress response', function () {
       it('sends 100 unreliably with no body', function () {
-        ua.transport.ws.send.and.callFake(function () {
-          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
+        ua.transport.socket.send.and.callFake(function () {
+          var packet = ua.transport.socket.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 100 Trying');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
 
-        ua.transport.ws.send.calls.reset();
+        ua.transport.socket.send.calls.reset();
         session.progress({ statusCode: 100 });
       });
 
       it('sends 1xx reliably with a body', function () {
-        ua.transport.ws.send.and.callFake(function () {
-          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
+        ua.transport.socket.send.and.callFake(function () {
+          var packet = ua.transport.socket.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 180 Ringing');
           expect(packet).toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch(/Content-Length: [^0].*\r\n/);
         });
 
-        ua.transport.ws.send.calls.reset();
+        ua.transport.socket.send.calls.reset();
         session.progress({ statusCode: 180 });
       });
     });
@@ -262,7 +262,7 @@ describe('A UAS receiving an INVITE', function () {
               }
             }
           };
-          ua.transport.ws.receiveMessage(Messages.Invite.replaces);
+          ua.transport.socket.receiveMessage(Messages.Invite.replaces);
         });
       });
 
@@ -307,7 +307,7 @@ describe('A UAS receiving an INVITE', function () {
               }
             }
           };
-          ua.transport.ws.receiveMessage(Messages.Invite.replaces);
+          ua.transport.socket.receiveMessage(Messages.Invite.replaces);
         });
       });
     });
