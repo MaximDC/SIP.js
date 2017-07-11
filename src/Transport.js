@@ -32,7 +32,7 @@ Transport = function(ua, server) {
 
   this.logger = ua.getLogger('sip.transport');
   this.ua = ua;
-  this.socket = dgram.createSocket('udp4');
+  this.socket = null;
   this.server = server;
   this.reconnection_attempts = 0;
   this.closed = false;
@@ -59,7 +59,7 @@ Transport.prototype = {
   send: function(msg) {
     var message = msg.toString();
 
-    if(this.socket && this.socket.readyState === UDPSocket.OPEN) {
+    if(this.socket) {
       if (this.ua.configuration.traceSip === true) {
         this.logger.log('sending UDPSocket message:\n\n' + message + '\n');
       }
@@ -144,7 +144,7 @@ Transport.prototype = {
   connect: function() {
     var transport = this;
 
-    if(this.socket && (this.socket.readyState === UDPSocket.OPEN || this.socket.readyState === UDPSocket.CONNECTING)) {
+    if(this.socket) {
       this.logger.log('UDPSocket ' + this.server.socket_uri + ' is already connected');
       return false;
     }
@@ -159,12 +159,12 @@ Transport.prototype = {
       (this.reconnection_attempts === 0)?1:this.reconnection_attempts);
 
     try {
-      this.socket = new UDPSocket(this.server.socket_uri, 'sip');
+      this.socket = dgram.createSocket('udp4')
     } catch(e) {
       this.logger.warn('error connecting to UDPSocket ' + this.server.socket_uri + ': ' + e);
     }
 
-    this.socket.binaryType = 'arraybuffer';
+    //this.socket.binaryType = 'arraybuffer';
 
     this.socket.onopen = function() {
       transport.onOpen();
